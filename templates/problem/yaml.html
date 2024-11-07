@@ -2,8 +2,25 @@
 
 {% block media %}
     <style>
-        .copy-clipboard {
-            margin-top: 0 !important;
+        .line {
+            position: relative;
+        }
+
+        .highlighter {
+            position: absolute;
+            width: 9999px;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+        pre {
+            margin: 0;
+        }
+
+        a:active .line .highlighter {
+            background: rgba(255, 212, 0, 0.48);
         }
     </style>
 {% endblock %}
@@ -21,7 +38,7 @@
                             'class': 'btn-clipboard',
                             'data-clipboard-text': $(this).text(),
                             'title': 'Click to copy'
-                        }).text('Copy')));
+                        }).html('<i class="icon copy"></i> {{ _('Copy') }}')));
 
                     $(copyButton.get(0)).mouseleave(function () {
                         $(this).attr('class', 'btn-clipboard');

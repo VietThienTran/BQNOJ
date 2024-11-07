@@ -1,6 +1,6 @@
 import hashlib
 import hmac
-from datetime import timedelta
+from datetime import date, timedelta
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -34,10 +34,8 @@ class MinValueOrNoneValidator(MinValueValidator):
 class ContestTag(models.Model):
     color_validator = RegexValidator('^#(?:[A-Fa-f0-9]{3}){1,2}$', _('Invalid colour.'))
 
-    slug = models.SlugField(max_length=20, verbose_name=_('tag slug'), unique=True,
-                            help_text=_('Tag name shown in URLs.'))
-    name = models.CharField(max_length=128, verbose_name=_('tag title'))
-
+    name = models.CharField(max_length=20, verbose_name=_('tag name'), unique=True,
+                            validators=[RegexValidator(r'^[a-z-]+$', message=_('Lowercase letters and hyphens only.'))])
     color = models.CharField(max_length=7, verbose_name=_('tag colour'), validators=[color_validator])
     description = models.TextField(verbose_name=_('tag description'), blank=True)
 
@@ -45,7 +43,7 @@ class ContestTag(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return reverse('contest_tag', args=[self.slug])
+        return reverse('contest_tag', args=[self.name])
 
     @property
     def text_color(self, cache={}):
@@ -88,6 +86,10 @@ class Contest(models.Model):
     problems = models.ManyToManyField(Problem, verbose_name=_('problems'), through='ContestProblem')
     start_time = models.DateTimeField(verbose_name=_('start time'), db_index=True)
     end_time = models.DateTimeField(verbose_name=_('end time'), db_index=True)
+    registration_start = models.DateTimeField(verbose_name=_('registration start time'),
+                                              blank=True, null=True, default=None)
+    registration_end = models.DateTimeField(verbose_name=_('registration end time'),
+                                            blank=True, null=True, default=None)
     time_limit = models.DurationField(verbose_name=_('time limit'), blank=True, null=True)
     frozen_last_minutes = models.IntegerField(verbose_name=_('frozen last minutes'), default=0,
                                               help_text=_('If set, the scoreboard will be frozen for the last X '
@@ -212,6 +214,16 @@ class Contest(models.Model):
         # Django will complain if you didn't fill in start_time or end_time, so we don't have to.
         if self.start_time and self.end_time and self.start_time >= self.end_time:
             raise ValidationError('What is this? A contest that ended before it starts?')
+
+        if self.registration_start and self.registration_end and self.registration_start >= self.registration_end:
+            raise ValidationError('Registration window must start before it ends.')
+
+        if self.registration_start and self.start_time and self.registration_start >= self.start_time:
+            raise ValidationError('Registration window must start before the contest starts.')
+
+        if self.registration_end and self.end_time and self.registration_end >= self.end_time:
+            raise ValidationError('Registration window must end before the contest ends.')
+
         self.format_class.validate(self.format_config)
 
         try:
@@ -310,6 +322,20 @@ class Contest(models.Model):
         return timezone.now()
 
     @cached_property
+    def require_registration(self):
+        return self.registration_start is not None or self.registration_end is not None
+
+    @cached_property
+    def can_register(self):
+        if not self.require_registration:
+            return False
+        if self.registration_start and self._now < self.registration_start:
+            return False
+        if self.registration_end and self._now > self.registration_end:
+            return False
+        return True
+
+    @cached_property
     def can_join(self):
         return self.start_time <= self._now
 
@@ -317,6 +343,13 @@ class Contest(models.Model):
     def frozen_time(self):
         # Don't need to check self.frozen_last_minutes != 0
         return self.end_time - timedelta(minutes=self.frozen_last_minutes)
+
+    @property
+    def time_before_register(self):
+        if self.registration_start and self._now <= self.registration_start:
+            return self.registration_start - self._now
+        else:
+            return None
 
     @property
     def time_before_start(self):
@@ -366,7 +399,7 @@ class Contest(models.Model):
 
     def update_user_count(self):
         self.user_count = self.users.filter(virtual=0).count()
-        self.virtual_count = self.users.filter(virtual__gt=ContestParticipation.SPECTATE).count()
+        self.virtual_count = self.users.filter(virtual__gt=0).count()
         self.save()
 
     update_user_count.alters_data = True
@@ -578,6 +611,10 @@ class ContestParticipation(models.Model):
         return self.virtual == self.SPECTATE
 
     @cached_property
+    def pre_registered(self):
+        return self.real_start.astimezone(timezone.utc).date() == date(1970, 1, 1)
+
+    @cached_property
     def start(self):
         contest = self.contest
         return contest.start_time if contest.time_limit is None and (self.live or self.spectate) else self.real_start
@@ -592,6 +629,8 @@ class ContestParticipation(models.Model):
                 return self.real_start + contest.time_limit
             else:
                 return self.real_start + (contest.end_time - contest.start_time)
+        if self.pre_registered:
+            return contest.end_time
         return contest.end_time if contest.time_limit is None else \
             min(self.real_start + contest.time_limit, contest.end_time)
 

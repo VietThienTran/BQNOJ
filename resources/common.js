@@ -112,8 +112,8 @@ window.fix_div = function (div, height) {
 $(function () {
     if (typeof window.orientation !== 'undefined') {
         $(window).resize(function () {
-            var width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-            $('#viewport').attr('content', width > 480 ? 'initial-scale=1' : 'width=480');
+            // var width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+            // $('#viewport').attr('content', width > 480 ? 'initial-scale=1' : 'width=480');
         });
     }
 
@@ -182,7 +182,7 @@ function count_down(label) {
         var time = Math.round(initial - (Date.now() - start) / 1000);
         if (time <= 0) {
             clearInterval(timer);
-            setTimeout(function() {
+            setTimeout(function () {
                 window.location.reload();
             }, 2000);
         }
@@ -322,5 +322,5 @@ $(function () {
     $(document).on('click', 'blockquote.spoiler', function (e) {
         $(this).addClass("is-visible");
         e.stopPropagation();
-    } );
+    });
 });

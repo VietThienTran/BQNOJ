@@ -1,5 +1,6 @@
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -216,16 +217,41 @@ def pandoc_get_version():
     return tuple(map(int, parts))
 
 
-def parse_checker(problem_meta, root, package):
+def parse_assets(problem_meta, root, package):
+    # Parse interactor
+    interactor = root.find('.//interactor')
+    if interactor is None:
+        print('Use standard grader')
+        problem_meta['grader'] = 'standard'
+    else:
+        print('Found interactor')
+        print('Use interactive grader')
+        problem_meta['grader'] = 'interactive'
+        problem_meta['custom_grader'] = os.path.join(problem_meta['tmp_dir'].name, 'interactor.cpp')
+
+        source = interactor.find('source')
+        if source is None:
+            raise CommandError('interactor source not found. how possible?')
+
+        path = source.get('path')
+        if not path.lower().endswith('.cpp'):
+            raise CommandError('interactor must use C++')
+
+        with open(problem_meta['custom_grader'], 'wb') as f:
+            f.write(package.read(path))
+
+        print('NOTE: checker is ignored when using interactive grader')
+        print('If you use custom checker, please merge it with the interactor')
+        problem_meta['checker'] = 'standard'
+        return
+
+    # Parse checker
     checker = root.find('.//checker')
     if checker is None:
         raise CommandError('checker not found')
 
     if checker.get('type') != 'testlib':
         raise CommandError('not a testlib checker. how possible?')
-
-    print('Use standard grader')
-    problem_meta['grader'] = 'standard'
 
     checker_name = checker.get('name')
     if checker_name is None:
@@ -316,7 +342,7 @@ def parse_tests(problem_meta, root, package):
     if groups is not None:
         for group in groups.getchildren():
             name = group.get('name')
-            points = int(float(group.get('points', 0)))
+            points = float(group.get('points', 0))
             points_policy = group.get('points-policy')
             dependencies = group.find('dependencies')
             if dependencies is None:
@@ -340,7 +366,7 @@ def parse_tests(problem_meta, root, package):
         input_path_pattern = testset.find('input-path-pattern').text
         answer_path_pattern = testset.find('answer-path-pattern').text
         for i, test in enumerate(testset.find('tests').getchildren()):
-            points = int(float(test.get('points', 0)))
+            points = float(test.get('points', 0))
             input_path = input_path_pattern % (i + 1)
             answer_path = answer_path_pattern % (i + 1)
             input_file = f'{(i + 1):02d}.inp'
@@ -388,6 +414,31 @@ def parse_tests(problem_meta, root, package):
 
     for batch in each_test_batches:
         del problem_meta['batches'][batch]
+
+    # Normalize points if necessary
+    # Polygon allows fractional points, but DMOJ does not
+    all_points = [batch['points'] for batch in problem_meta['batches'].values()] + \
+                 [problem_meta['cases_data'][i]['points'] for i in problem_meta['normal_cases']]
+    if any(not p.is_integer() for p in all_points):
+        print('Found fractional points. Normalize to integers')
+        all_points = [int(p * 1000) for p in all_points]
+        gcd = math.gcd(*all_points)
+        for batch in problem_meta['batches'].values():
+            batch['points'] = int(batch['points'] * 1000) // gcd
+        for i in problem_meta['normal_cases']:
+            case_data = problem_meta['cases_data'][i]
+            case_data['points'] = int(case_data['points'] * 1000) // gcd
+
+    # Ignore zero-point batches
+    zero_point_batches = [name for name, batch in problem_meta['batches'].items() if batch['points'] == 0]
+    if len(zero_point_batches) > 0:
+        print('Found zero-point batches:', ', '.join(zero_point_batches))
+        print('Would you like ignore them (y/n)? ', end='', flush=True)
+        if input().lower() in ['y', 'yes']:
+            problem_meta['batches'] = {
+                name: batch for name, batch in problem_meta['batches'].items() if batch['points'] > 0
+            }
+            print(f'Ignored {len(zero_point_batches)} zero-point batches')
 
     # Sort tests by index
     problem_meta['normal_cases'].sort()
@@ -475,6 +526,11 @@ def parse_statements(problem_meta, root, package):
         # Output
         description += '\n## Output\n\n'
         description += pandoc_tex_to_markdown(problem_properties['output'])
+
+        # Interaction
+        if problem_properties['interaction'] is not None:
+            description += '\n## Interaction\n\n'
+            description += pandoc_tex_to_markdown(problem_properties['interaction'])
 
         # Scoring
         if problem_properties['scoring'] is not None:
@@ -634,6 +690,11 @@ def create_problem(problem_meta):
         problem_data.checker_args = json.dumps(problem_meta['checker_args'])
         problem_data.save()
 
+    if 'custom_grader' in problem_meta:
+        with open(problem_meta['custom_grader'], 'rb') as f:
+            problem_data.custom_grader = File(f)
+            problem_data.save()
+
     order = 0
 
     for batch in problem_meta['batches'].values():
@@ -746,7 +807,7 @@ class Command(BaseCommand):
         problem_meta['curators'] = problem_curators
 
         try:
-            parse_checker(problem_meta, root, package)
+            parse_assets(problem_meta, root, package)
             parse_tests(problem_meta, root, package)
             parse_statements(problem_meta, root, package)
             create_problem(problem_meta)

@@ -199,10 +199,6 @@ img.user-gravatar {
 #rating-tooltip {
     display: none;
     position: absolute;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 3px;
-    border-radius: 3px;
     transition: all .1s ease;
     pointer-events: none;
     transform: translate(-50%, 0);
@@ -213,16 +209,6 @@ img.user-gravatar {
 }
 
 #submission-activity {
-    #submission-activity-actions {
-        text-align: center;
-        #prev-year-action, #next-year-action {
-            font-size: 1.75em;
-        }
-        #year {
-            font-size: 1.25em;
-            color: $color_primary75;
-        }
-    }
 
     #submission-activity-display {
         border: 1px solid $color_primary25;

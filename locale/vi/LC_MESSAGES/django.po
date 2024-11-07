@@ -4548,8 +4548,8 @@ msgstr "dựa trên nền tảng %(dmoj)s"
 
 #: templates/base.html:355
 #, python-format
-msgid "follow us on %(github)s"
-msgstr "theo dõi BQNOJ trên %(github)s"
+msgid "follow us on %(github)s and %(facebook)s"
+msgstr "Theo dõi CTUOJ trên %(github)s và %(facebook)s"
 
 #: templates/blog/blog-list-tabs.html:4
 msgid "Newsfeed"
@@ -4631,7 +4631,7 @@ msgstr "Báo cáo mới"
 
 #: templates/blog/list.html:111 templates/contest/list.html:192
 msgid "Ongoing contests"
-msgstr "Kỳ thi đang diễn ra"
+msgstr "Các kỳ thi đang diễn ra"
 
 #: templates/blog/list.html:119
 #, python-format
@@ -4640,7 +4640,7 @@ msgstr "Kết thúc trong %(countdown)s."
 
 #: templates/blog/list.html:129 templates/contest/list.html:229
 msgid "Upcoming contests"
-msgstr "Kỳ thi sắp tới"
+msgstr "Các kỳ thi sắp tới"
 
 #: templates/blog/list.html:137 templates/contest/contest.html:55
 #, python-format
@@ -5988,11 +5988,11 @@ msgstr "Dạng"
 
 #: templates/problem/list.html:185
 #, python-format
-msgid "%% AC"
+msgid "%%AC"
 msgstr ""
 
 #: templates/problem/list.html:188
-msgid "# AC"
+msgid "#AC"
 msgstr ""
 
 #: templates/problem/manage_submission.html:57
