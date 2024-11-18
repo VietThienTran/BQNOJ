@@ -876,6 +876,17 @@
                     <div style="display: flex; align-items: center" class="dmoj-label">
                         {% include 'site-logo-fragment.html' %}
                     </div>
+
+                    <a href="https://fb.com/zit.software" class="zit-label" target="_blank">
+                        <img src="https://github.com/zit-software.png" class="ui image avatar mini"/>
+
+                        <div>
+                            {{ _('Customized by ') }}
+                            <span>
+                                ZIT Software
+                            </span>
+                        </div>
+                    </a>
                 </div>
                 <div class="four wide column">
                     <div class="ui header inverted">
@@ -886,28 +897,28 @@
                     </div>
                     <hr class="ui divider"/>
                     <div class="ui list link inverted relaxed divided">
-                        <a class="item" href="https://dhkthc.bocongan.gov.vn/TrangChu/" target="_blank">
+                        <a class="item" href="https://ctu.edu.vn" target="_blank">
                             <i class="icon university"></i>
                             <div class="content">
-                                Đại học Kỹ thuật Hậu cần CAND
+                                Đại học Cần Thơ
                             </div>
                         </a>
-                        <a class="item" href="https://dhkthc.bocongan.gov.vn/TrangChu/the-loai/23-tin-tuc-hoat-dong.html" target="_blank">
+                        <a class="item" href="https://htql.ctu.edu.vn" target="_blank">
                             <i class="icon server"></i>
                             <div class="content">
-                                Tin tức, hoạt động
+                                Hệ thống quản lý
                             </div>
                         </a>
-                        <a class="item" href="https://dhkthc.bocongan.gov.vn/TrangChu/the-loai/40-dao-tao.html" target="_blank">
+                        <a class="item" href="https://cit.ctu.edu.vn" target="_blank">
                             <i class="icon building"></i>
                             <div class="content">
-                                Đào tạo
+                                Trường CNTT&TT
                             </div>
                         </a>
-                        <a class="item" href="https://dhkthc.bocongan.gov.vn/TrangChu/lien-he.html" target="_blank">
+                        <a class="item" href="https://cit.ctu.edu.vn/doankhoa" target="_blank">
                             <i class="icon users"></i>
                             <div class="content">
-                                Liên hệ
+                                Đoàn Trường CNTT&TT
                             </div>
                         </a>
                     </div>
@@ -917,24 +928,24 @@
                     <div class="ui header inverted">
                         <i class="icon linkify"></i>
                         <div class="content">
-                            Nhóm phát triển
+                            Liên kết
                         </div>
                     </div>
                     <hr class="ui divider"/>
                     <div class="ui list link inverted relaxed divided">
-                        <a class="item" href="/about" target="_blank">
+                        <a class="item" href="https://ctuit.club" target="_blank">
                             <i class="icon computer"></i>
                             <div class="content">
-                                About me
+                                Câu lạc bộ tin học
                             </div>
                         </a>
-                        <a class="item" href="https://www.facebook.com/devsmile1995/" target="_blank">
+                        <a class="item" href="https://www.facebook.com/ctuit.club/" target="_blank">
                             <i class="icon facebook"></i>
                             <div class="content">
                                 Facebook
                             </div>
                         </a>
-                        <a class="item" href="https://github.com/VietThienTran" target="_blank">
+                        <a class="item" href="https://github.com/CTU-ITClub" target="_blank">
                             <i class="icon github"></i>
                             <div class="content">
                                 Github
@@ -943,6 +954,23 @@
                     </div>
                 </div>
             </div>
+
+            <hr class="ui divider"/>
+
+            <div>
+                {{ _('proudly powered by %(dmoj)s', dmoj=safe('<a style="color: #808080" href="https://dmoj.ca"><b>DMOJ</b></a>')) }}
+                |
+                {{ _('follow us on %(github)s and %(facebook)s', github=safe('<a style="color: #808080" href="https://github.com/CTU-ITClub/CTU-OJ" target="_blank"><b>Github</b></a>'), facebook=safe('<a style="color: #808080" href="https://www.facebook.com/ctuit.club" target="_blank"><b>Facebook</b></a>')) }}
+                {% if misc_config.footer %}
+                    {{ misc_config.footer|safe }} |
+                {% endif %}
+                <form id="set_language" action="{{ url('set_language') }}" method="post" style="display: none">
+                    {% csrf_token %}
+                    <input name="next" type="hidden" value="{{ request.get_full_path() }}">
+                    <input name="language" type="hidden" value="{{ LANGUAGE_CODE }}">
+                </form>
+            </div>
+
         </div>
     </footer>
 
